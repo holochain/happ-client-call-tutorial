@@ -34,13 +34,13 @@ const AGENT_PUB_KEY: &str = "uhCAkaHxxzngUd7u7SoDPL7FSJFqISI7mFjpUkC8zov8p02nl-p
 const ZOME_NAME: &str = "numbers";
 const FN_NAME: &str = "add_ten";
 
-// data we want to pass holochain
+// custom data we want to pass the hApp
 #[derive(Serialize, Deserialize, SerializedBytes, Debug, Clone)]
 struct ZomeInput {
     number: i32,
 }
 
-// data we want back from holochain
+// custom data we want back from the hApp
 #[derive(Serialize, Deserialize, SerializedBytes, Debug, Clone)]
 pub struct ZomeOutput {
     other_number: i32,
@@ -59,6 +59,7 @@ pub async fn call() -> Result<ZomeOutput, String> {
     let encoded_payload =
         ExternIO::encode(payload.clone()).or(Err(String::from("serialization of payload failed")))?;
 
+    // construct a Cell ID from a DnaHash and an AgentPubKey
     let dna_hash =
         HoloHashB64::<Dna>::from_b64_str(DNA_HASH)
             .or(Err(String::from("deserializing dna_hash failed")))?;
@@ -66,7 +67,8 @@ pub async fn call() -> Result<ZomeOutput, String> {
         HoloHashB64::<Agent>::from_b64_str(AGENT_PUB_KEY)
             .or(Err(String::from("deserializing agent_pub_key failed")))?;
     let cell_id = CellId::new(dna_hash.into(), agent_pub_key.clone().into());
-    // define the context of the request
+
+    // define the full context of the request
     let api_request = ZomeCall {
         cell_id: cell_id,
         zome_name: ZomeName::from(String::from(ZOME_NAME)),
@@ -88,7 +90,6 @@ pub async fn call() -> Result<ZomeOutput, String> {
 
     // you must decode the payload from
     // the standarized format its returned as
-    // let result: ZomeOutput = encoded_api_response
     let result: ZomeOutput = encoded_api_response
         .decode()
         .or(Err(String::from("deserialization failed")))?;
@@ -105,7 +106,8 @@ async fn main() {
 }
 ```
 
-Typescript 
+### TODO Typescript Example
+
 // TODO: the same thing but in typescript with holochain-conductor-api
 ```typescript
 
