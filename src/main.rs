@@ -14,8 +14,8 @@ use serde::*;
 const WS_URL: &str = "ws://localhost:8888";
 const DNA_HASH: &str = "uhC0kr_aK3yRD4rCHsxdPr56Vm60ZwV9gltDOzlHa2ZCx_PYlUC07";
 const AGENT_PUB_KEY: &str = "uhCAkaHxxzngUd7u7SoDPL7FSJFqISI7mFjpUkC8zov8p02nl-pAC";
-const ZOME_NAME: &str = "foo";
-const FN_NAME: &str = "foo";
+const ZOME_NAME: &str = "numbers";
+const FN_NAME: &str = "add_ten";
 
 // data we want to pass holochain
 #[derive(Serialize, Deserialize, SerializedBytes, Debug, Clone)]

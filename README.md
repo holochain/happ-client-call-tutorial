@@ -1,5 +1,9 @@
 # How to call your hApp
 
+> Holochain revision: [753ea0873cd6e4c7b3ba30ead2d815d5f61b5373 Jun 4, 2021](https://github.com/holochain/holochain/commits/753ea0873cd6e4c7b3ba30ead2d815d5f61b5373)
+
+This project is set up as a complementary guide to the ["happ build tutorial"](https://github.com/holochain/happ-build-tutorial/tree/happ-client-call-tutorial), and interacts with that code via a clean separation at the "network layer". This project calls that project over a network connection, such as Websockets or HTTP, and has no direct dependency on the code itself other than communicating via that connection.
+
 A client, such as a GUI or utility script, talks to their hApp using a remote procedure call (RPC) to a “holochain conductor” via a networking interface like an HTTP or Websocket service. The "holochain conductor" has to be running the hApp at the time of the request. If using Websockets the client can also receive “signals” transmitted from the Conductor by subscribing. 
 
 Since a “conductor” can be running many hApps simultaneously when a client makes a request it will have to specify with precision where to route the request. It has to pass things known as a Cell ID, a Zome name, and a function name, along with the actual input payload.
@@ -27,8 +31,8 @@ use serde::*;
 const WS_URL: &str = "ws://localhost:8888";
 const DNA_HASH: &str = "uhC0kr_aK3yRD4rCHsxdPr56Vm60ZwV9gltDOzlHa2ZCx_PYlUC07";
 const AGENT_PUB_KEY: &str = "uhCAkaHxxzngUd7u7SoDPL7FSJFqISI7mFjpUkC8zov8p02nl-pAC";
-const ZOME_NAME: &str = "foo";
-const FN_NAME: &str = "foo";
+const ZOME_NAME: &str = "numbers";
+const FN_NAME: &str = "add_ten";
 
 // data we want to pass holochain
 #[derive(Serialize, Deserialize, SerializedBytes, Debug, Clone)]
@@ -117,11 +121,11 @@ In the above example, there are a handful of "magic strings" that we might ask o
 const WS_URL: &str = "ws://localhost:8888";
 const DNA_HASH: &str = "uhC0kr_aK3yRD4rCHsxdPr56Vm60ZwV9gltDOzlHa2ZCx_PYlUC07";
 const AGENT_PUB_KEY: &str = "uhCAkaHxxzngUd7u7SoDPL7FSJFqISI7mFjpUkC8zov8p02nl-pAC";
-const ZOME_NAME: &str = "foo";
-const FN_NAME: &str = "foo";
+const ZOME_NAME: &str = "numbers";
+const FN_NAME: &str = "add_ten";
 ```
 
-This walkthrough will assume that you have a hApp prepared, and running on a conductor, which you can find instructions on how to do [here](https://github.com/holochain/happ-build-tutorial).
+This walkthrough will assume that you have a hApp prepared, and running on a conductor, which you can find instructions on how to do [here](https://github.com/holochain/happ-build-tutorial/tree/happ-client-call-tutorial).
 
 Go through the instructions till you get to this command:
 ```bash
@@ -167,7 +171,7 @@ ___
 
 ### Third
 ```rust
-const ZOME_NAME: &str = "foo";
+const ZOME_NAME: &str = "numbers";
 ```
 
 A raw code module is called a Zome (short for chromosome) and defines core business logic. A DNA will have 1 or more Zomes, where each Zome has a given name, for example “chatter”, associated with some raw code.
@@ -178,7 +182,7 @@ ___
 
 ### Fourth
 ```rust
-const FN_NAME: &str = "foo";
+const FN_NAME: &str = "add_ten";
 ```
 
 A Zome can expose functions publicly to the Holochain conductor runtime. Some of these functions are like ‘hooks’ called automatically by Holochain, such as validation functions related to data types defined in the Zome. Other functions are invented by the developer, have arbitrary names, and define the Zome’s public API.
