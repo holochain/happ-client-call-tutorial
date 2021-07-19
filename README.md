@@ -112,7 +112,8 @@ async fn main() {
 
 ### TODO Typescript Example
 
-// TODO: the same thing but in typescript with holochain-conductor-api
+// TODO: the same thing but in typescript with holochain-conductor-api (Please help!)
+[Issue #1](/holochain/happ-client-call-tutorial/issues/1)
 ```typescript
 
 ```
