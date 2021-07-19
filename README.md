@@ -157,6 +157,8 @@ $ hc sandbox call 0 list-cells
 # hc-sandbox: Cell Ids: [CellId(DnaHash(uhC0kvRCGdnEW7-69nvczqYcXjpagbqilxeDw6mcLyEV9zscrxDPb), AgentPubKey(uhCAkZ-UqvaRMcBbLNuec8qT16YYLglkrluYQ3uDFn_iKVzP34IDa))]
 ```
 
+Take the value inside `DnaHash(...)` and replace the value of `DNA_HASH` in the code with it. Take the value inside `AgentPubKey(...)` and replace the value of `AGENT_PUB_KEY` in the code with it.
+
 A bundle of properties and source code for a unit of a hApp is called a DNA. Apart from the section of the bundle that is ‘properties’ or metadata, the DNA is made up of submodules in which the actual functions are written into code, known as Zomes. 
 
 > Due to the properties of cryptographic hashing, even the slightest alteration in this bundle either in the code or in the properties will change the hash, and thus form an entirely separate peer-to-peer network than the unaltered version. Thus defining a DNA must be done with great precision.
