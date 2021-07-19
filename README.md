@@ -147,7 +147,7 @@ ___
 const WS_URL: &str = "ws://localhost:8888";
 ```
 
-The hApp will have to be 1. installed, and 2. active, and 3. attached to an “app interface” within the conductor in order for it to be callable over an HTTP or Websocket networking port/interface. The `hc sandbox generate` call generously performed all the actions necessary to meet those criteria, but note that this is not always the case and in many cases it can and should be done more manually (via calls to the "admin interface" of the conductor.
+The hApp will have to be 1. installed, 2. active, and 3. attached to an “app interface” within the conductor in order for it to be callable over an HTTP or Websocket networking port/interface. The `hc sandbox generate` call generously performed all the actions necessary to meet those criteria, but note that this is not always the case and in many cases it can and should be done more manually (via calls to the "admin interface" of the conductor.
 
 The attachment of a Websocket server to the networking port `8888` was accomplished by passing `--run=8888` during the `hc sandbox generate` call.
 
