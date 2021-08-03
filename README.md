@@ -307,7 +307,9 @@ Once you are there, run:
 cargo run
 ```
 
-After it compiles (taking longest the first time) you should see:
+This will compile the code, then execute it, and will take longest the first time you execute the command, and much much shorter the second or later times.
+
+After it runs you should see:
 ```bash
 Result of the call: ZomeOutput {
     other_number: 20,
