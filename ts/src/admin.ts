@@ -11,6 +11,7 @@ AdminWebsocket.connect(`ws://localhost:${ADMIN_PORT}`).then(
       // encode serialized response to base64 string
       const dnas = dnasRaw.map((dnaRaw) => {
         const buf = Buffer.from(dnaRaw);
+        /// holo hashes begin with a lower case "u"
         return `u${buf.toString('base64')}`;
       });
       console.log('DNAs', dnas);

@@ -9,8 +9,7 @@ import { Buffer } from 'buffer';
 
 const WS_URL = 'ws://localhost:8888';
 
-// TODO find out why the first 'u' is not encoded
-// when omitting it, encoding works
+/// holo hashes begin with a lower case "u"
 const DNA_HASH = 'uhC0kHvFAj_TiqlX2aS6ZyMQLYshDozOl2y-QgOw2GVVSiyDYIWwr'.slice(1);
 const AGENT_PUB_KEY = 'uhCAkYV71BjFj7gNeOkJ96QXTPRChoEnREcJIC5WR4YbONLl_4y1U'.slice(1);
 const ZOME_NAME = 'numbers';
