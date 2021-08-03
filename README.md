@@ -18,7 +18,7 @@ The specific "function" being called is embedded within a “Zome” within a �
 
 ### Rust Example
 
-This code is runnable and lives within [src/main.rs](./src/main.rs).
+This code is runnable and lives within [rust/src/main.rs](./rust/src/main.rs).
 
 ```rust
 use hdk::prelude::{
@@ -112,12 +112,69 @@ async fn main() {
 }
 ```
 
-### TODO Typescript Example
+### TypeScript Example
 
-// TODO: the same thing but in typescript with holochain-conductor-api (Please help!)
-[Issue #1](https://github.com/holochain/happ-client-call-tutorial/issues/1)
+This code is runnable and lives within [ts/src/app.ts](./ts/src/app.ts).
+
 ```typescript
+import {
+  AgentPubKey,
+  AppWebsocket,
+  CallZomeRequest,
+  CellId,
+  HoloHash
+} from '@holochain/conductor-api';
+import { Buffer } from 'buffer';
 
+const WS_URL = 'ws://localhost:8888';
+
+// TODO find out why the first 'u' is not encoded
+// when omitting it, encoding works
+const DNA_HASH = 'uhC0kHvFAj_TiqlX2aS6ZyMQLYshDozOl2y-QgOw2GVVSiyDYIWwr'.slice(1);
+const AGENT_PUB_KEY = 'uhCAkYV71BjFj7gNeOkJ96QXTPRChoEnREcJIC5WR4YbONLl_4y1U'.slice(1);
+const ZOME_NAME = 'numbers';
+const FN_NAME = 'add_ten';
+
+const dnaHash: HoloHash = Buffer.from(DNA_HASH, 'base64');
+const agentPubKey: AgentPubKey = Buffer.from(AGENT_PUB_KEY, 'base64');
+const cell_id: CellId = [dnaHash, agentPubKey];
+
+interface ZomeInput {
+  number: number;
+}
+
+interface ZomeOutput {
+  other_number: number;
+}
+
+AppWebsocket.connect(WS_URL).then(
+  // connect to the running holochain conductor
+  async (appClient) => {
+    console.log('connected to happ');
+    const payload: ZomeInput = { number: 10 };
+    // define the context of the request
+    const apiRequest: CallZomeRequest =
+    {
+      cap: null,
+      cell_id,
+      zome_name: ZOME_NAME,
+      fn_name: FN_NAME,
+      provenance: agentPubKey,
+      payload
+    };
+
+    try {
+      // make the request
+      const numbersOutput: ZomeOutput = await appClient.callZome(apiRequest);
+      // the result is already deserialized
+      console.log('Result of the call:', numbersOutput);
+    } catch (error) {
+      console.log('Got an error:', error);
+    } finally {
+      appClient.client.close();
+    }
+  }
+);
 ```
 
 ___
@@ -214,13 +271,13 @@ pub fn add_ten(input: ZomeInput) -> ExternResult<ZomeOutput> {
 
 Note the `add_ten` of course.
 
-## Running It
+## Running the Rust example
 
-If you've followed the instructions and have the "conductor" running, then just navigate in a terminal to this folder (and have Rust installed).
+If you've followed the instructions and have the "conductor" running, then just navigate in a terminal to the `rust` folder.
 
 Once you are there, run:
-```
-$ cargo run
+```bash
+cargo run
 ```
 
 After it compiles (taking longest the first time) you should see:
@@ -231,3 +288,73 @@ Result of the call: ZomeOutput {
 ```
 
 You made your first "Zome call", which is shorthand for an API call to your hApp!
+
+## Running the TypeScript example
+
+### App API
+
+Just like in the Rust example, make sure that your "conductor" is running and change to the `ts` folder.
+
+Install dependencies by running 
+
+`npm install`
+
+Open the file `app.ts` and replace the DNA and agent pub key:
+```typescript
+const DNA_HASH = 'uhC0kHvFAj_TiqlX2aS6ZyMQLYshDozOl2y-QgOw2GVVSiyDYIWwr'.slice(1);
+const AGENT_PUB_KEY = 'uhCAkYV71BjFj7gNeOkJ96QXTPRChoEnREcJIC5WR4YbONLl_4y1U'.slice(1);
+```
+
+To run the zome calls to the App API, type:
+```bash
+npm run app
+```
+
+The output will be something along these lines:
+```bash
+connected to happ
+
+zome: whoami = fn: whoami - output {
+  agent_initial_pubkey: <Buffer 84 20 24 61 5e f5 06 31 63 ee 03 5e 3a 42 7d e9 05 d3 3d 10 a1 a0 49 d1 11 c2 48 0b 95 91 e1 86 ce 34 b9 7f e3 2d 54>,
+  agent_latest_pubkey: <Buffer 84 20 24 61 5e f5 06 31 63 ee 03 5e 3a 42 7d e9 05 d3 3d 10 a1 a0 49 d1 11 c2 48 0b 95 91 e1 86 ce 34 b9 7f e3 2d 54>
+}
+decoded agent_initial_pubkey uhCAkYV71BjFj7gNeOkJ96QXTPRChoEnREcJIC5WR4YbONLl/4y1U
+decoded agent_latest_pubkey uhCAkYV71BjFj7gNeOkJ96QXTPRChoEnREcJIC5WR4YbONLl/4y1U
+
+zome: numbers - fn: add_ten - output { other_number: 20 }
+```
+
+You have successfully called two zome functions with NodeJS! If you want to try something out for yourself, you can make a call to the "whoami" zome.
+
+### Admin API
+
+There's a second command in the `package.json` file, with which you can make a call to the Admin API of the conductor. It will return a list of hashes
+of the available DNAs.
+
+The Admin port is different each time you generate the holochain sandbox. Therefore you need to copy it first from your hApp
+```bash
+...
+
+Conductor ready.
+hc-sandbox: Running conductor on admin port _49590_
+hc-sandbox: Attaching app port 8888
+hc-sandbox: App port attached at 8888
+hc-sandbox: Connected successfully to a running holochain
+```
+
+and paste it as the port in file `ts/admin.ts`
+```typescript
+const ADMIN_PORT = 49590;
+```
+
+Now you can run the call:
+```bash
+npm run admin
+```
+
+You should see
+```bash
+DNAs [ 'uhC0kHvFAj/TiqlX2aS6ZyMQLYshDozOl2y+QgOw2GVVSiyDYIWwr' ]
+```
+
+Brilliant! Now you can make calls to both Admin and App API with TypeScript!

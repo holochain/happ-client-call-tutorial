@@ -1,1 +1,2 @@
-/target
+/rust/target
+/ts/node_modules

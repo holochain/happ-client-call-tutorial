@@ -39,15 +39,13 @@ pub async fn call() -> Result<ZomeOutput, String> {
     let payload = ZomeInput { number: 10 };
     // you must encode the payload to standardize it
     // for passing to your hApp
-    let encoded_payload =
-        ExternIO::encode(payload.clone()).or(Err(String::from("serialization of payload failed")))?;
+    let encoded_payload = ExternIO::encode(payload.clone())
+        .or(Err(String::from("serialization of payload failed")))?;
 
-    let dna_hash =
-        HoloHashB64::<Dna>::from_b64_str(DNA_HASH)
-            .or(Err(String::from("deserializing dna_hash failed")))?;
-    let agent_pub_key =
-        HoloHashB64::<Agent>::from_b64_str(AGENT_PUB_KEY)
-            .or(Err(String::from("deserializing agent_pub_key failed")))?;
+    let dna_hash = HoloHashB64::<Dna>::from_b64_str(DNA_HASH)
+        .or(Err(String::from("deserializing dna_hash failed")))?;
+    let agent_pub_key = HoloHashB64::<Agent>::from_b64_str(AGENT_PUB_KEY)
+        .or(Err(String::from("deserializing agent_pub_key failed")))?;
     let cell_id = CellId::new(dna_hash.into(), agent_pub_key.clone().into());
     // define the context of the request
     let api_request = ZomeCall {
@@ -71,7 +69,6 @@ pub async fn call() -> Result<ZomeOutput, String> {
 
     // you must decode the payload from
     // the standarized format its returned as
-    // let result: ZomeOutput = encoded_api_response
     let result: ZomeOutput = encoded_api_response
         .decode()
         .or(Err(String::from("deserialization failed")))?;
