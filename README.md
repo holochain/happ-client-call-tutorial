@@ -319,6 +319,10 @@ You made your first "Zome call", which is shorthand for an API call to your hApp
 
 Just like in the Rust example, make sure that your "conductor" is running and change to the `ts` folder.
 
+Install dependencies by running 
+
+`npm install`
+
 Open the file `app.ts` and replace the DNA and agent pub key:
 ```typescript
 const DNA_HASH = 'uhC0kHvFAj_TiqlX2aS6ZyMQLYshDozOl2y-QgOw2GVVSiyDYIWwr'.slice(1);
