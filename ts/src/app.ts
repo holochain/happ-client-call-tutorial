@@ -8,15 +8,14 @@ import {
 import { Buffer } from 'buffer';
 
 const WS_URL = 'ws://localhost:8888';
-
-/// holo hashes begin with a lower case "u"
-const DNA_HASH = 'uhC0kHvFAj_TiqlX2aS6ZyMQLYshDozOl2y-QgOw2GVVSiyDYIWwr'.slice(1);
-const AGENT_PUB_KEY = 'uhCAkYV71BjFj7gNeOkJ96QXTPRChoEnREcJIC5WR4YbONLl_4y1U'.slice(1);
+const DNA_HASH = 'uhC0kHvFAj_TiqlX2aS6ZyMQLYshDozOl2y-QgOw2GVVSiyDYIWwr';
+const AGENT_PUB_KEY = 'uhCAkYV71BjFj7gNeOkJ96QXTPRChoEnREcJIC5WR4YbONLl_4y1U';
 const ZOME_NAME = 'numbers';
 const FN_NAME = 'add_ten';
 
-const dnaHash: HoloHash = Buffer.from(DNA_HASH, 'base64');
-const agentPubKey: AgentPubKey = Buffer.from(AGENT_PUB_KEY, 'base64');
+// .slice(1) to trim the leading `u` to match expected Holochain serialization
+const dnaHash: HoloHash = Buffer.from(DNA_HASH.slice(1), 'base64');
+const agentPubKey: AgentPubKey = Buffer.from(AGENT_PUB_KEY.slice(1), 'base64');
 const cell_id: CellId = [dnaHash, agentPubKey];
 
 interface ZomeInput {
