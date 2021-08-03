@@ -4,6 +4,8 @@
 
 > Rust Conductor Api revision: [4edf406b674d676f076bb19fdbe79fe5a1077c0d  June 9, 2021](https://github.com/holochain/conductor-client-rust/commit/4edf406b674d676f076bb19fdbe79fe5a1077c0d)
 
+> TS/JS Conductor API version: [0.1.1 (July 12, 2021)](https://www.npmjs.com/package/@holochain/conductor-api/v/0.1.1)
+
 > This project is set up as a complementary guide to the ["happ build tutorial"](https://github.com/holochain/happ-build-tutorial/tree/happ-client-call-tutorial), and interacts with that code via a clean separation at the "network layer". This project calls that project over a network connection, such as Websockets or HTTP, and has no direct dependency on the code itself other than communicating via that connection.
 
 Welcome to this project here to help you make your first network request or "call" to your hApp! If you haven't previously read the article on ["Application Architecture" on the developer documentation](https://developer.holochain.org/concepts/2_application_architecture/) it could be helpful to do so now, or at any point during this tutorial.
@@ -115,6 +117,7 @@ async fn main() {
 ### TypeScript Example
 
 This code is runnable and lives within [ts/src/app.ts](./ts/src/app.ts).
+Note that a difference between this and the Rust code is that the `callZome` function deserializes the output for you, whereas in Rust you have to serialize it yourself before sending it, and deserialize the output from the call as well.
 
 ```typescript
 import {
@@ -127,16 +130,14 @@ import {
 import { Buffer } from 'buffer';
 
 const WS_URL = 'ws://localhost:8888';
-
-// TODO find out why the first 'u' is not encoded
-// when omitting it, encoding works
-const DNA_HASH = 'uhC0kHvFAj_TiqlX2aS6ZyMQLYshDozOl2y-QgOw2GVVSiyDYIWwr'.slice(1);
-const AGENT_PUB_KEY = 'uhCAkYV71BjFj7gNeOkJ96QXTPRChoEnREcJIC5WR4YbONLl_4y1U'.slice(1);
+const DNA_HASH = 'uhC0kHvFAj_TiqlX2aS6ZyMQLYshDozOl2y-QgOw2GVVSiyDYIWwr';
+const AGENT_PUB_KEY = 'uhCAkYV71BjFj7gNeOkJ96QXTPRChoEnREcJIC5WR4YbONLl_4y1U';
 const ZOME_NAME = 'numbers';
 const FN_NAME = 'add_ten';
 
-const dnaHash: HoloHash = Buffer.from(DNA_HASH, 'base64');
-const agentPubKey: AgentPubKey = Buffer.from(AGENT_PUB_KEY, 'base64');
+// .slice(1) is to remove the `u` of the first character, necessary for Holochain encoding
+const dnaHash: HoloHash = Buffer.from(DNA_HASH.slice(1), 'base64');
+const agentPubKey: AgentPubKey = Buffer.from(AGENT_PUB_KEY.slice(1), 'base64');
 const cell_id: CellId = [dnaHash, agentPubKey];
 
 interface ZomeInput {
@@ -183,12 +184,22 @@ All “hApp”s to which the client can make requests must be hosted and active 
 When the conductor receives a request from the client, it will check if the arguments provided match with a hApp that’s currently running in the conductor and route the request to the right component within the right hApp accordingly if so.
 
 In the above example, there are a handful of "magic strings" that we might ask ourselves, "where did that come from?":
+
+#### Rust
 ```rust
 const WS_URL: &str = "ws://localhost:8888";
 const DNA_HASH: &str = "uhC0kr_aK3yRD4rCHsxdPr56Vm60ZwV9gltDOzlHa2ZCx_PYlUC07";
 const AGENT_PUB_KEY: &str = "uhCAkaHxxzngUd7u7SoDPL7FSJFqISI7mFjpUkC8zov8p02nl-pAC";
 const ZOME_NAME: &str = "numbers";
 const FN_NAME: &str = "add_ten";
+```
+#### Typescript
+```typescript
+const WS_URL = 'ws://localhost:8888';
+const DNA_HASH = 'uhC0kHvFAj_TiqlX2aS6ZyMQLYshDozOl2y-QgOw2GVVSiyDYIWwr'.slice(1);
+const AGENT_PUB_KEY = 'uhCAkYV71BjFj7gNeOkJ96QXTPRChoEnREcJIC5WR4YbONLl_4y1U'.slice(1);
+const ZOME_NAME = 'numbers';
+const FN_NAME = 'add_ten';
 ```
 
 This walkthrough will assume that you have a hApp prepared, and running on a conductor, which you can find instructions on how to do [here](https://github.com/holochain/happ-build-tutorial/tree/happ-client-call-tutorial).
@@ -206,6 +217,9 @@ ___
 ```rust
 const WS_URL: &str = "ws://localhost:8888";
 ```
+```typescript
+const WS_URL = 'ws://localhost:8888';
+```
 
 The hApp will have to be 1. installed, 2. active, and 3. attached to an “app interface” within the conductor in order for it to be callable over an HTTP or Websocket networking port/interface. The `hc sandbox generate` call generously performed all the actions necessary to meet those criteria, but note that this is not always the case and in many cases it can and should be done more manually (via calls to the "admin interface" of the conductor.
 
@@ -217,6 +231,10 @@ ___
 ```rust
 const DNA_HASH: &str = "uhC0kr_aK3yRD4rCHsxdPr56Vm60ZwV9gltDOzlHa2ZCx_PYlUC07";
 const AGENT_PUB_KEY: &str = "uhCAkaHxxzngUd7u7SoDPL7FSJFqISI7mFjpUkC8zov8p02nl-pAC";
+```
+```typescript
+const DNA_HASH = 'uhC0kHvFAj_TiqlX2aS6ZyMQLYshDozOl2y-QgOw2GVVSiyDYIWwr';
+const AGENT_PUB_KEY = 'uhCAkYV71BjFj7gNeOkJ96QXTPRChoEnREcJIC5WR4YbONLl_4y1U';
 ```
 
 Things known as Cells occupy slots in a hApp. When a client makes a request to a hApp through a conductor, it will have to specify which “slot” in the hApp it is calling into, which is accomplished by passing the ID of the “Cell” which occupies the slot. A Cell ID is a pairing of the hash that identifies the "DNA", and the public key which represents the agent. The agent public key portion of a Cell ID will always be the same for every Cell within a hApp, but can be different for different hApps. The Dna hash portion of the Cell ID will be different for every Cell within a hApp.
@@ -239,6 +257,9 @@ ___
 ```rust
 const ZOME_NAME: &str = "numbers";
 ```
+```typescript
+const ZOME_NAME = 'numbers';
+```
 
 A raw code module is called a Zome (short for chromosome) and defines core business logic. A DNA will have 1 or more Zomes, where each Zome has a given name, for example “chatter”, associated with some raw code.
 
@@ -257,6 +278,9 @@ ___
 ```rust
 const FN_NAME: &str = "add_ten";
 ```
+```typescript
+const FN_NAME = 'add_ten';
+```
 
 A Zome can expose functions publicly to the Holochain conductor runtime. Some of these functions are invented by the developer, have arbitrary names, and define the Zome’s public API. Others are like [hooks](https://stackoverflow.com/questions/467557/what-is-meant-by-the-term-hook-in-programming) called automatically by Holochain, such as validation functions related to data types defined in the Zome. 
 
@@ -273,7 +297,10 @@ Note the `add_ten` of course.
 
 ## Running the Rust example
 
-If you've followed the instructions and have the "conductor" running, then just navigate in a terminal to the `rust` folder.
+If you've followed the instructions and have the "conductor" running, then just navigate in a terminal to the `rust` folder:
+```bash
+cd rust
+```
 
 Once you are there, run:
 ```bash
@@ -293,16 +320,19 @@ You made your first "Zome call", which is shorthand for an API call to your hApp
 
 ### App API
 
-Just like in the Rust example, make sure that your "conductor" is running and change to the `ts` folder.
+Just like in the Rust example, make sure that your "conductor" is running, then just navigate in a terminal to the `ts` folder:
+```bash
+cd ts
+```
 
-Install dependencies by running 
+Install dependencies by running: 
 
 `npm install`
 
 Open the file `app.ts` and replace the DNA and agent pub key:
 ```typescript
-const DNA_HASH = 'uhC0kHvFAj_TiqlX2aS6ZyMQLYshDozOl2y-QgOw2GVVSiyDYIWwr'.slice(1);
-const AGENT_PUB_KEY = 'uhCAkYV71BjFj7gNeOkJ96QXTPRChoEnREcJIC5WR4YbONLl_4y1U'.slice(1);
+const DNA_HASH = 'uhC0kHvFAj_TiqlX2aS6ZyMQLYshDozOl2y-QgOw2GVVSiyDYIWwr';
+const AGENT_PUB_KEY = 'uhCAkYV71BjFj7gNeOkJ96QXTPRChoEnREcJIC5WR4YbONLl_4y1U';
 ```
 
 To run the zome calls to the App API, type:
@@ -321,7 +351,7 @@ zome: whoami = fn: whoami - output {
 decoded agent_initial_pubkey uhCAkYV71BjFj7gNeOkJ96QXTPRChoEnREcJIC5WR4YbONLl/4y1U
 decoded agent_latest_pubkey uhCAkYV71BjFj7gNeOkJ96QXTPRChoEnREcJIC5WR4YbONLl/4y1U
 
-zome: numbers - fn: add_ten - output { other_number: 20 }
+Result of the call: { other_number: 20 }
 ```
 
 You have successfully called two zome functions with NodeJS! If you want to try something out for yourself, you can make a call to the "whoami" zome.
