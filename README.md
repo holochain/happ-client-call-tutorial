@@ -344,17 +344,10 @@ The output will be something along these lines:
 ```bash
 connected to happ
 
-zome: whoami = fn: whoami - output {
-  agent_initial_pubkey: <Buffer 84 20 24 61 5e f5 06 31 63 ee 03 5e 3a 42 7d e9 05 d3 3d 10 a1 a0 49 d1 11 c2 48 0b 95 91 e1 86 ce 34 b9 7f e3 2d 54>,
-  agent_latest_pubkey: <Buffer 84 20 24 61 5e f5 06 31 63 ee 03 5e 3a 42 7d e9 05 d3 3d 10 a1 a0 49 d1 11 c2 48 0b 95 91 e1 86 ce 34 b9 7f e3 2d 54>
-}
-decoded agent_initial_pubkey uhCAkYV71BjFj7gNeOkJ96QXTPRChoEnREcJIC5WR4YbONLl/4y1U
-decoded agent_latest_pubkey uhCAkYV71BjFj7gNeOkJ96QXTPRChoEnREcJIC5WR4YbONLl/4y1U
-
 Result of the call: { other_number: 20 }
 ```
 
-You have successfully called two zome functions with NodeJS! If you want to try something out for yourself, you can make a call to the "whoami" zome.
+You made your first "Zome call", which is shorthand for an API call to your hApp! If you want to try something out for yourself, you can set `ZOME_NAME` to "whoami", `FN_NAME` to "whoami" and `payload` to `null`.
 
 ### Admin API
 
