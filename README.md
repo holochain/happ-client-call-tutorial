@@ -114,6 +114,8 @@ async fn main() {
 
 ### TypeScript Example
 
+This code is runnable and lives within [ts/src/app.ts](./ts/src/app.ts).
+
 ```typescript
 import {
   AppWebsocket,
