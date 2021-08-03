@@ -118,87 +118,63 @@ This code is runnable and lives within [ts/src/app.ts](./ts/src/app.ts).
 
 ```typescript
 import {
+  AgentPubKey,
   AppWebsocket,
+  CallZomeRequest,
   CellId,
-  HoloHash,
-  AgentPubKey
+  HoloHash
 } from '@holochain/conductor-api';
 import { Buffer } from 'buffer';
 
-// port of the Holochain's App API
-const APP_PORT = 8888;
+const WS_URL = 'ws://localhost:8888';
 
 // TODO find out why the first 'u' is not encoded
 // when omitting it, encoding works
 const DNA_HASH = 'uhC0kHvFAj_TiqlX2aS6ZyMQLYshDozOl2y-QgOw2GVVSiyDYIWwr'.slice(1);
 const AGENT_PUB_KEY = 'uhCAkYV71BjFj7gNeOkJ96QXTPRChoEnREcJIC5WR4YbONLl_4y1U'.slice(1);
+const ZOME_NAME = 'numbers';
+const FN_NAME = 'add_ten';
 
 const dnaHash: HoloHash = Buffer.from(DNA_HASH, 'base64');
 const agentPubKey: AgentPubKey = Buffer.from(AGENT_PUB_KEY, 'base64');
 const cell_id: CellId = [dnaHash, agentPubKey];
 
-interface WhoAmIOutput {
-  agent_initial_pubkey: Buffer;
-  agent_latest_pubkey: Buffer;
-}
-
-interface NumbersInput {
+interface ZomeInput {
   number: number;
 }
 
-interface NumbersOutput {
+interface ZomeOutput {
   other_number: number;
 }
 
-AppWebsocket.connect(`ws://localhost:${APP_PORT}`).then(
+AppWebsocket.connect(WS_URL).then(
+  // connect to the running holochain conductor
   async (appClient) => {
     console.log('connected to happ');
-    console.log();
-    try {
-      // first calling another zome function of the same DNA
-      // which will return our own agent pub key
-      const whoAmIOutput: WhoAmIOutput = await appClient.callZome(
-        {
-          cap: null, // no capability secret required
-          cell_id,
-          zome_name: 'whoami',
-          fn_name: 'whoami',
-          provenance: agentPubKey,
-          payload: null // no input for the zome fn
-        }
-      );
-      console.log('zome: whoami = fn: whoami - output', whoAmIOutput);
-      // the result object contains serialized base64 hashes
-      console.log('decoded agent_initial_pubkey', decodeHoloHash(whoAmIOutput.agent_initial_pubkey));
-      console.log('decoded agent_latest_pubkey', decodeHoloHash(whoAmIOutput.agent_latest_pubkey));
-      console.log();
+    const payload: ZomeInput = { number: 10 };
+    // define the context of the request
+    const apiRequest: CallZomeRequest =
+    {
+      cap: null,
+      cell_id,
+      zome_name: ZOME_NAME,
+      fn_name: FN_NAME,
+      provenance: agentPubKey,
+      payload
+    };
 
-      // next we'll call the same DNA as in the Rust example
-      const payload: NumbersInput = { number: 10 };
-      const numbersOutput: NumbersOutput = await appClient.callZome(
-        {
-          cap: null,
-          cell_id,
-          zome_name: 'numbers',
-          fn_name: 'add_ten',
-          provenance: agentPubKey,
-          payload
-        }
-      );
+    try {
+      // make the request
+      const numbersOutput: ZomeOutput = await appClient.callZome(apiRequest);
       // the result is already deserialized
-      console.log('zome: numbers - fn: add_ten - output', numbersOutput);
+      console.log('Result of the call:', numbersOutput);
     } catch (error) {
-      console.log('error occurred', error);
+      console.log('Got an error:', error);
     } finally {
       appClient.client.close();
     }
   }
 );
-
-// prepend a 'u' and convert to a base64 string
-function decodeHoloHash(buf: Buffer) {
-  return `u${buf.toString('base64')}`;
-}
 ```
 
 ___
@@ -344,7 +320,7 @@ decoded agent_latest_pubkey uhCAkYV71BjFj7gNeOkJ96QXTPRChoEnREcJIC5WR4YbONLl/4y1
 zome: numbers - fn: add_ten - output { other_number: 20 }
 ```
 
-You have successfully called two zome functions with NodeJS!
+You have successfully called two zome functions with NodeJS! If you want to try something out for yourself, you can make a call to the "whoami" zome.
 
 ### Admin API
 
