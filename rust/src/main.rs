@@ -1,29 +1,24 @@
 use hdk::prelude::{
-    holo_hash::{
-        hash_type::{Agent, Dna},
-        HoloHashB64,
-    },
     holochain_serial,
     holochain_zome_types::zome::{FunctionName, ZomeName},
-    CellId, ExternIO, SerializedBytes,
+    ExternIO, SerializedBytes,
 };
 use holochain_conductor_api::ZomeCall;
 use holochain_conductor_api_rust::AppWebsocket;
 use serde::*;
 
 const WS_URL: &str = "ws://localhost:8888";
-const DNA_HASH: &str = "uhC0kr_aK3yRD4rCHsxdPr56Vm60ZwV9gltDOzlHa2ZCx_PYlUC07";
-const AGENT_PUB_KEY: &str = "uhCAkaHxxzngUd7u7SoDPL7FSJFqISI7mFjpUkC8zov8p02nl-pAC";
+const H_APP_ID: &str = "test-app";
 const ZOME_NAME: &str = "numbers";
 const FN_NAME: &str = "add_ten";
 
-// data we want to pass holochain
+// custom data we want to pass the hApp
 #[derive(Serialize, Deserialize, SerializedBytes, Debug, Clone)]
 struct ZomeInput {
     number: i32,
 }
 
-// data we want back from holochain
+// custom data we want back from the hApp
 #[derive(Serialize, Deserialize, SerializedBytes, Debug, Clone)]
 pub struct ZomeOutput {
     other_number: i32,
@@ -35,6 +30,15 @@ pub async fn call() -> Result<ZomeOutput, String> {
     let mut app_ws = AppWebsocket::connect(WS_URL.to_string())
         .await
         .or(Err(String::from("Could not connect to conductor")))?;
+    let app_info_result = app_ws
+        .app_info(H_APP_ID.to_string())
+        .await
+        .or(Err(String::from("Could not get app info")))?;
+    let app_info = match app_info_result {
+        None => return Err(String::from("no app info found")),
+        Some(app_info) => app_info,
+    };
+    let cell_id = app_info.cell_data[0].as_id().to_owned();
 
     let payload = ZomeInput { number: 10 };
     // you must encode the payload to standardize it
@@ -42,19 +46,14 @@ pub async fn call() -> Result<ZomeOutput, String> {
     let encoded_payload = ExternIO::encode(payload.clone())
         .or(Err(String::from("serialization of payload failed")))?;
 
-    let dna_hash = HoloHashB64::<Dna>::from_b64_str(DNA_HASH)
-        .or(Err(String::from("deserializing dna_hash failed")))?;
-    let agent_pub_key = HoloHashB64::<Agent>::from_b64_str(AGENT_PUB_KEY)
-        .or(Err(String::from("deserializing agent_pub_key failed")))?;
-    let cell_id = CellId::new(dna_hash.into(), agent_pub_key.clone().into());
     // define the context of the request
     let api_request = ZomeCall {
-        cell_id: cell_id,
+        cell_id: cell_id.clone(),
         zome_name: ZomeName::from(String::from(ZOME_NAME)),
         fn_name: FunctionName::from(String::from(FN_NAME)),
         payload: encoded_payload,
         cap: None,
-        provenance: agent_pub_key.into(),
+        provenance: cell_id.clone().agent_pubkey().to_owned(),
     };
 
     // make the request
