@@ -8,12 +8,14 @@ use hdk::prelude::{
     CellId, ExternIO, SerializedBytes,
 };
 use holochain_conductor_api::ZomeCall;
-use holochain_conductor_api_rust::AppWebsocket;
+use holochain_conductor_client::AppWebsocket;
 use serde::*;
 
 const WS_URL: &str = "ws://localhost:8888";
-const DNA_HASH: &str = "uhC0kr_aK3yRD4rCHsxdPr56Vm60ZwV9gltDOzlHa2ZCx_PYlUC07";
-const AGENT_PUB_KEY: &str = "uhCAkaHxxzngUd7u7SoDPL7FSJFqISI7mFjpUkC8zov8p02nl-pAC";
+// replace this, based on the DnaHash portion of the output of `hc sandbox call 0 list-cells`
+const DNA_HASH: &str = "uhC0kaiJKjACG1NunHwWUTXr3RER72PkxT62W4GNa3qOuwJWe1gUQ";
+// replace this, based on the AgentPubKey portion of the output of `hc sandbox call 0 list-cells`
+const AGENT_PUB_KEY: &str = "uhCAkPXiK-DI-fY9erjy68FFQn7L4eyjtjkRH51r8URPFFUX6JLpM";
 const ZOME_NAME: &str = "numbers";
 const FN_NAME: &str = "add_ten";
 
@@ -53,7 +55,7 @@ pub async fn call() -> Result<ZomeOutput, String> {
         zome_name: ZomeName::from(String::from(ZOME_NAME)),
         fn_name: FunctionName::from(String::from(FN_NAME)),
         payload: encoded_payload,
-        cap: None,
+        cap_secret: None,
         provenance: agent_pub_key.into(),
     };
 

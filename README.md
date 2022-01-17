@@ -1,12 +1,12 @@
 # How to call your hApp
 
-> Holochain revision: [753ea0873cd6e4c7b3ba30ead2d815d5f61b5373 Jun 4, 2021](https://github.com/holochain/holochain/commits/753ea0873cd6e4c7b3ba30ead2d815d5f61b5373)
+> Holochain revision: [v0.0.119 Dec 8, 2021](https://github.com/holochain/holochain/tree/holochain-0.0.119)
 
-> Rust Conductor Api revision: [4edf406b674d676f076bb19fdbe79fe5a1077c0d  June 9, 2021](https://github.com/holochain/conductor-client-rust/commit/4edf406b674d676f076bb19fdbe79fe5a1077c0d)
+> holochain-client-rust revision: [59fc988b50f0097056aa02f11cd1b89a73f1c306  Jan 14, 2022](https://github.com/holochain/holochain-client-rust/commit/59fc988b50f0097056aa02f11cd1b89a73f1c306)
 
-> TS/JS Conductor API version: [0.1.1 (July 12, 2021)](https://www.npmjs.com/package/@holochain/conductor-api/v/0.1.1)
+> holochain-client-js version: [0.3.0 Jan 13, 2022](https://www.npmjs.com/package/@holochain/client/v/0.3.0)
 
-> This project is set up as a complementary guide to the ["happ build tutorial"](https://github.com/holochain/happ-build-tutorial/tree/happ-client-call-tutorial), and interacts with that code via a clean separation at the "network layer". This project calls that project over a network connection, such as Websockets or HTTP, and has no direct dependency on the code itself other than communicating via that connection.
+> This project is set up as a complementary guide to the ["happ build tutorial"](https://github.com/holochain/happ-build-tutorial/commit/d3f16fe3664b61adc5322a2c48b033743bd87cf8), and interacts with that code via a clean separation at the "network layer". This project calls that project over a network connection, such as Websockets or HTTP, and has no direct dependency on the code itself other than communicating via that connection.
 
 Welcome to this project here to help you make your first network request or "call" to your hApp! If you haven't previously read the article on ["Application Architecture" on the developer documentation](https://developer.holochain.org/concepts/2_application_architecture/) it could be helpful to do so now, or at any point during this tutorial.
 
@@ -33,22 +33,24 @@ use hdk::prelude::{
     CellId, ExternIO, SerializedBytes,
 };
 use holochain_conductor_api::ZomeCall;
-use holochain_conductor_api_rust::AppWebsocket;
+use holochain_conductor_client::AppWebsocket;
 use serde::*;
 
 const WS_URL: &str = "ws://localhost:8888";
-const DNA_HASH: &str = "uhC0kr_aK3yRD4rCHsxdPr56Vm60ZwV9gltDOzlHa2ZCx_PYlUC07";
-const AGENT_PUB_KEY: &str = "uhCAkaHxxzngUd7u7SoDPL7FSJFqISI7mFjpUkC8zov8p02nl-pAC";
+// replace this, based on the DnaHash portion of the output of `hc sandbox call 0 list-cells`
+const DNA_HASH: &str = "uhC0kaiJKjACG1NunHwWUTXr3RER72PkxT62W4GNa3qOuwJWe1gUQ";
+// replace this, based on the AgentPubKey portion of the output of `hc sandbox call 0 list-cells`
+const AGENT_PUB_KEY: &str = "uhCAkPXiK-DI-fY9erjy68FFQn7L4eyjtjkRH51r8URPFFUX6JLpM";
 const ZOME_NAME: &str = "numbers";
 const FN_NAME: &str = "add_ten";
 
-// custom data we want to pass the hApp
+// data we want to pass holochain
 #[derive(Serialize, Deserialize, SerializedBytes, Debug, Clone)]
 struct ZomeInput {
     number: i32,
 }
 
-// custom data we want back from the hApp
+// data we want back from holochain
 #[derive(Serialize, Deserialize, SerializedBytes, Debug, Clone)]
 pub struct ZomeOutput {
     other_number: i32,
@@ -64,25 +66,21 @@ pub async fn call() -> Result<ZomeOutput, String> {
     let payload = ZomeInput { number: 10 };
     // you must encode the payload to standardize it
     // for passing to your hApp
-    let encoded_payload =
-        ExternIO::encode(payload.clone()).or(Err(String::from("serialization of payload failed")))?;
+    let encoded_payload = ExternIO::encode(payload.clone())
+        .or(Err(String::from("serialization of payload failed")))?;
 
-    // construct a Cell ID from a DnaHash and an AgentPubKey
-    let dna_hash =
-        HoloHashB64::<Dna>::from_b64_str(DNA_HASH)
-            .or(Err(String::from("deserializing dna_hash failed")))?;
-    let agent_pub_key =
-        HoloHashB64::<Agent>::from_b64_str(AGENT_PUB_KEY)
-            .or(Err(String::from("deserializing agent_pub_key failed")))?;
+    let dna_hash = HoloHashB64::<Dna>::from_b64_str(DNA_HASH)
+        .or(Err(String::from("deserializing dna_hash failed")))?;
+    let agent_pub_key = HoloHashB64::<Agent>::from_b64_str(AGENT_PUB_KEY)
+        .or(Err(String::from("deserializing agent_pub_key failed")))?;
     let cell_id = CellId::new(dna_hash.into(), agent_pub_key.clone().into());
-
-    // define the full context of the request
+    // define the context of the request
     let api_request = ZomeCall {
         cell_id: cell_id,
         zome_name: ZomeName::from(String::from(ZOME_NAME)),
         fn_name: FunctionName::from(String::from(FN_NAME)),
         payload: encoded_payload,
-        cap: None,
+        cap_secret: None,
         provenance: agent_pub_key.into(),
     };
 
@@ -121,21 +119,21 @@ Note that a difference between this and the Rust code is that the `callZome` fun
 
 ```typescript
 import {
-  AgentPubKey,
   AppWebsocket,
   CallZomeRequest,
-  CellId,
-  HoloHash
-} from '@holochain/conductor-api';
+} from '@holochain/client';
+import { AgentPubKey, CellId, HoloHash } from '@holochain/client/lib/types/common';
 import { Buffer } from 'buffer';
 
 const WS_URL = 'ws://localhost:8888';
-const DNA_HASH = 'uhC0kHvFAj_TiqlX2aS6ZyMQLYshDozOl2y-QgOw2GVVSiyDYIWwr';
-const AGENT_PUB_KEY = 'uhCAkYV71BjFj7gNeOkJ96QXTPRChoEnREcJIC5WR4YbONLl_4y1U';
+// replace this, based on the DnaHash portion of the output of `hc sandbox call 0 list-cells`
+const DNA_HASH = 'uhC0kaiJKjACG1NunHwWUTXr3RER72PkxT62W4GNa3qOuwJWe1gUQ';
+// replace this, based on the AgentPubKey portion of the output of `hc sandbox call 0 list-cells`
+const AGENT_PUB_KEY = 'uhCAkPXiK-DI-fY9erjy68FFQn7L4eyjtjkRH51r8URPFFUX6JLpM';
 const ZOME_NAME = 'numbers';
 const FN_NAME = 'add_ten';
 
-// .slice(1) is to remove the `u` of the first character, necessary for Holochain encoding
+// .slice(1) to trim the leading `u` to match expected Holochain serialization
 const dnaHash: HoloHash = Buffer.from(DNA_HASH.slice(1), 'base64');
 const agentPubKey: AgentPubKey = Buffer.from(AGENT_PUB_KEY.slice(1), 'base64');
 const cell_id: CellId = [dnaHash, agentPubKey];
@@ -156,7 +154,7 @@ AppWebsocket.connect(WS_URL).then(
     // define the context of the request
     const apiRequest: CallZomeRequest =
     {
-      cap: null,
+      cap_secret: null,
       cell_id,
       zome_name: ZOME_NAME,
       fn_name: FN_NAME,

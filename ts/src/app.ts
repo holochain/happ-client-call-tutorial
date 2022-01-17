@@ -1,15 +1,15 @@
 import {
-  AgentPubKey,
   AppWebsocket,
   CallZomeRequest,
-  CellId,
-  HoloHash
-} from '@holochain/conductor-api';
+} from '@holochain/client';
+import { AgentPubKey, CellId, HoloHash } from '@holochain/client/lib/types/common';
 import { Buffer } from 'buffer';
 
 const WS_URL = 'ws://localhost:8888';
-const DNA_HASH = 'uhC0kHvFAj_TiqlX2aS6ZyMQLYshDozOl2y-QgOw2GVVSiyDYIWwr';
-const AGENT_PUB_KEY = 'uhCAkYV71BjFj7gNeOkJ96QXTPRChoEnREcJIC5WR4YbONLl_4y1U';
+// replace this, based on the DnaHash portion of the output of `hc sandbox call 0 list-cells`
+const DNA_HASH = 'uhC0kaiJKjACG1NunHwWUTXr3RER72PkxT62W4GNa3qOuwJWe1gUQ';
+// replace this, based on the AgentPubKey portion of the output of `hc sandbox call 0 list-cells`
+const AGENT_PUB_KEY = 'uhCAkPXiK-DI-fY9erjy68FFQn7L4eyjtjkRH51r8URPFFUX6JLpM';
 const ZOME_NAME = 'numbers';
 const FN_NAME = 'add_ten';
 
@@ -34,7 +34,7 @@ AppWebsocket.connect(WS_URL).then(
     // define the context of the request
     const apiRequest: CallZomeRequest =
     {
-      cap: null,
+      cap_secret: null,
       cell_id,
       zome_name: ZOME_NAME,
       fn_name: FN_NAME,
