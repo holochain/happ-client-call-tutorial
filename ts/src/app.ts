@@ -2,26 +2,19 @@ import {
   AppWebsocket,
   CallZomeRequest,
 } from '@holochain/client';
-import { AgentPubKey, CellId, HoloHash } from '@holochain/client/lib/types/common';
-import { Buffer } from 'buffer';
 
 const WS_URL = 'ws://localhost:8888';
-// replace this, based on the DnaHash portion of the output of `hc sandbox call 0 list-cells`
-const DNA_HASH = 'uhC0kaiJKjACG1NunHwWUTXr3RER72PkxT62W4GNa3qOuwJWe1gUQ';
-// replace this, based on the AgentPubKey portion of the output of `hc sandbox call 0 list-cells`
-const AGENT_PUB_KEY = 'uhCAkPXiK-DI-fY9erjy68FFQn7L4eyjtjkRH51r8URPFFUX6JLpM';
+const H_APP_ID = 'test-app';
 const ZOME_NAME = 'numbers';
 const FN_NAME = 'add_ten';
 
-// .slice(1) to trim the leading `u` to match expected Holochain serialization
-const dnaHash: HoloHash = Buffer.from(DNA_HASH.slice(1), 'base64');
-const agentPubKey: AgentPubKey = Buffer.from(AGENT_PUB_KEY.slice(1), 'base64');
-const cell_id: CellId = [dnaHash, agentPubKey];
 
+// custom data we want to pass the hApp
 interface ZomeInput {
   number: number;
 }
 
+// custom data we want back from the hApp
 interface ZomeOutput {
   other_number: number;
 }
@@ -29,7 +22,12 @@ interface ZomeOutput {
 AppWebsocket.connect(WS_URL).then(
   // connect to the running holochain conductor
   async (appClient) => {
-    console.log('connected to happ');
+    const appInfo = await appClient.appInfo({ installed_app_id: H_APP_ID });
+    if (!appInfo.cell_data[0]) {
+      throw new Error('No app info found');
+    }
+
+    const cell_id = appInfo.cell_data[0].cell_id;
     const payload: ZomeInput = { number: 10 };
     // define the context of the request
     const apiRequest: CallZomeRequest =
@@ -38,7 +36,7 @@ AppWebsocket.connect(WS_URL).then(
       cell_id,
       zome_name: ZOME_NAME,
       fn_name: FN_NAME,
-      provenance: agentPubKey,
+      provenance: cell_id[1], // AgentPubKey,
       payload
     };
 

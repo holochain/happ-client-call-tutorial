@@ -24,23 +24,16 @@ This code is runnable and lives within [rust/src/main.rs](./rust/src/main.rs).
 
 ```rust
 use hdk::prelude::{
-    holo_hash::{
-        hash_type::{Agent, Dna},
-        HoloHashB64,
-    },
     holochain_serial,
     holochain_zome_types::zome::{FunctionName, ZomeName},
-    CellId, ExternIO, SerializedBytes,
+    ExternIO, SerializedBytes,
 };
 use holochain_conductor_api::ZomeCall;
 use holochain_conductor_client::AppWebsocket;
 use serde::*;
 
 const WS_URL: &str = "ws://localhost:8888";
-// replace this, based on the DnaHash portion of the output of `hc sandbox call 0 list-cells`
-const DNA_HASH: &str = "uhC0kaiJKjACG1NunHwWUTXr3RER72PkxT62W4GNa3qOuwJWe1gUQ";
-// replace this, based on the AgentPubKey portion of the output of `hc sandbox call 0 list-cells`
-const AGENT_PUB_KEY: &str = "uhCAkPXiK-DI-fY9erjy68FFQn7L4eyjtjkRH51r8URPFFUX6JLpM";
+const H_APP_ID: &str = "test-app";
 const ZOME_NAME: &str = "numbers";
 const FN_NAME: &str = "add_ten";
 
@@ -62,6 +55,15 @@ pub async fn call() -> Result<ZomeOutput, String> {
     let mut app_ws = AppWebsocket::connect(WS_URL.to_string())
         .await
         .or(Err(String::from("Could not connect to conductor")))?;
+    let app_info_result = app_ws
+        .app_info(H_APP_ID.to_string())
+        .await
+        .or(Err(String::from("Could not get app info")))?;
+    let app_info = match app_info_result {
+        None => return Err(String::from("no app info found")),
+        Some(app_info) => app_info,
+    };
+    let cell_id = app_info.cell_data[0].as_id().to_owned();
 
     let payload = ZomeInput { number: 10 };
     // you must encode the payload to standardize it
@@ -69,19 +71,14 @@ pub async fn call() -> Result<ZomeOutput, String> {
     let encoded_payload = ExternIO::encode(payload.clone())
         .or(Err(String::from("serialization of payload failed")))?;
 
-    let dna_hash = HoloHashB64::<Dna>::from_b64_str(DNA_HASH)
-        .or(Err(String::from("deserializing dna_hash failed")))?;
-    let agent_pub_key = HoloHashB64::<Agent>::from_b64_str(AGENT_PUB_KEY)
-        .or(Err(String::from("deserializing agent_pub_key failed")))?;
-    let cell_id = CellId::new(dna_hash.into(), agent_pub_key.clone().into());
     // define the context of the request
     let api_request = ZomeCall {
-        cell_id: cell_id,
+        cell_id: cell_id.clone(),
         zome_name: ZomeName::from(String::from(ZOME_NAME)),
         fn_name: FunctionName::from(String::from(FN_NAME)),
         payload: encoded_payload,
         cap_secret: None,
-        provenance: agent_pub_key.into(),
+        provenance: cell_id.clone().agent_pubkey().to_owned(),
     };
 
     // make the request
@@ -122,26 +119,18 @@ import {
   AppWebsocket,
   CallZomeRequest,
 } from '@holochain/client';
-import { AgentPubKey, CellId, HoloHash } from '@holochain/client/lib/types/common';
-import { Buffer } from 'buffer';
 
 const WS_URL = 'ws://localhost:8888';
-// replace this, based on the DnaHash portion of the output of `hc sandbox call 0 list-cells`
-const DNA_HASH = 'uhC0kaiJKjACG1NunHwWUTXr3RER72PkxT62W4GNa3qOuwJWe1gUQ';
-// replace this, based on the AgentPubKey portion of the output of `hc sandbox call 0 list-cells`
-const AGENT_PUB_KEY = 'uhCAkPXiK-DI-fY9erjy68FFQn7L4eyjtjkRH51r8URPFFUX6JLpM';
+const H_APP_ID = 'test-app';
 const ZOME_NAME = 'numbers';
 const FN_NAME = 'add_ten';
 
-// .slice(1) to trim the leading `u` to match expected Holochain serialization
-const dnaHash: HoloHash = Buffer.from(DNA_HASH.slice(1), 'base64');
-const agentPubKey: AgentPubKey = Buffer.from(AGENT_PUB_KEY.slice(1), 'base64');
-const cell_id: CellId = [dnaHash, agentPubKey];
-
+// custom data we want to pass the hApp
 interface ZomeInput {
   number: number;
 }
 
+// custom data we want back from the hApp
 interface ZomeOutput {
   other_number: number;
 }
@@ -149,7 +138,12 @@ interface ZomeOutput {
 AppWebsocket.connect(WS_URL).then(
   // connect to the running holochain conductor
   async (appClient) => {
-    console.log('connected to happ');
+    const appInfo = await appClient.appInfo({ installed_app_id: H_APP_ID });
+    if (!appInfo.cell_data[0]) {
+      throw new Error('No app info found');
+    }
+
+    const cell_id = appInfo.cell_data[0].cell_id;
     const payload: ZomeInput = { number: 10 };
     // define the context of the request
     const apiRequest: CallZomeRequest =
@@ -158,7 +152,7 @@ AppWebsocket.connect(WS_URL).then(
       cell_id,
       zome_name: ZOME_NAME,
       fn_name: FN_NAME,
-      provenance: agentPubKey,
+      provenance: cell_id[1], // AgentPubKey,
       payload
     };
 
@@ -186,16 +180,14 @@ In the above example, there are a handful of "magic strings" that we might ask o
 #### Rust
 ```rust
 const WS_URL: &str = "ws://localhost:8888";
-const DNA_HASH: &str = "uhC0kr_aK3yRD4rCHsxdPr56Vm60ZwV9gltDOzlHa2ZCx_PYlUC07";
-const AGENT_PUB_KEY: &str = "uhCAkaHxxzngUd7u7SoDPL7FSJFqISI7mFjpUkC8zov8p02nl-pAC";
+const H_APP_ID: &str = "test-app";
 const ZOME_NAME: &str = "numbers";
 const FN_NAME: &str = "add_ten";
 ```
 #### Typescript
 ```typescript
 const WS_URL = 'ws://localhost:8888';
-const DNA_HASH = 'uhC0kHvFAj_TiqlX2aS6ZyMQLYshDozOl2y-QgOw2GVVSiyDYIWwr'.slice(1);
-const AGENT_PUB_KEY = 'uhCAkYV71BjFj7gNeOkJ96QXTPRChoEnREcJIC5WR4YbONLl_4y1U'.slice(1);
+const H_APP_ID = 'test-app';
 const ZOME_NAME = 'numbers';
 const FN_NAME = 'add_ten';
 ```
@@ -219,7 +211,7 @@ const WS_URL: &str = "ws://localhost:8888";
 const WS_URL = 'ws://localhost:8888';
 ```
 
-The hApp will have to be 1. installed, 2. active, and 3. attached to an “app interface” within the conductor in order for it to be callable over an HTTP or Websocket networking port/interface. The `hc sandbox generate` call generously performed all the actions necessary to meet those criteria, but note that this is not always the case and in many cases it can and should be done more manually (via calls to the "admin interface" of the conductor.
+The hApp will have to be 1. installed, 2. active, and 3. attached to an “app interface” within the conductor in order for it to be callable over an HTTP or Websocket networking port/interface. The `hc sandbox generate` call generously performed all the actions necessary to meet those criteria, but note that this is not always the case and in many cases it can and should be done more manually (via calls to the "admin interface" of the conductor).
 
 The attachment of a Websocket server to the networking port `8888` was accomplished by passing `--run=8888` during the `hc sandbox generate` call.
 
@@ -227,27 +219,18 @@ ___
 
 ### Second
 ```rust
-const DNA_HASH: &str = "uhC0kr_aK3yRD4rCHsxdPr56Vm60ZwV9gltDOzlHa2ZCx_PYlUC07";
-const AGENT_PUB_KEY: &str = "uhCAkaHxxzngUd7u7SoDPL7FSJFqISI7mFjpUkC8zov8p02nl-pAC";
+const H_APP_ID: &str = "test-app";
 ```
 ```typescript
-const DNA_HASH = 'uhC0kHvFAj_TiqlX2aS6ZyMQLYshDozOl2y-QgOw2GVVSiyDYIWwr';
-const AGENT_PUB_KEY = 'uhCAkYV71BjFj7gNeOkJ96QXTPRChoEnREcJIC5WR4YbONLl_4y1U';
+const H_APP_ID = 'test-app';
 ```
 
-Things known as Cells occupy slots in a hApp. When a client makes a request to a hApp through a conductor, it will have to specify which “slot” in the hApp it is calling into, which is accomplished by passing the ID of the “Cell” which occupies the slot. A Cell ID is a pairing of the hash that identifies the "DNA", and the public key which represents the agent. The agent public key portion of a Cell ID will always be the same for every Cell within a hApp, but can be different for different hApps. The Dna hash portion of the Cell ID will be different for every Cell within a hApp.
-
-In another terminal, you can find the values to provide the "Cell ID", which are the `dna_hash` and the `agent_pub_key`.
+When you generated the sandbox, the hApp that you specified was installed. By default it is assigned the id `test-app`. You can provide a different id when creating your sandbox:
 ```bash
-$ hc sandbox call 0 list-cells
-# hc-sandbox: Cell Ids: [CellId(DnaHash(uhC0kvRCGdnEW7-69nvczqYcXjpagbqilxeDw6mcLyEV9zscrxDPb), AgentPubKey(uhCAkZ-UqvaRMcBbLNuec8qT16YYLglkrluYQ3uDFn_iKVzP34IDa))]
+hc sandbox generate workdir/happ --app-id another-app-id
 ```
 
-Take the value inside `DnaHash(...)` and replace the value of `DNA_HASH` in the code with it. Take the value inside `AgentPubKey(...)` and replace the value of `AGENT_PUB_KEY` in the code with it.
-
-A bundle of properties and source code for a unit of a hApp is called a DNA. Apart from the section of the bundle that is ‘properties’ or metadata, the DNA is made up of submodules in which the actual functions are written into code, known as Zomes. 
-
-> Due to the properties of cryptographic hashing, even the slightest alteration in this bundle either in the code or in the properties will change the hash, and thus form an entirely separate peer-to-peer network than the unaltered version. Thus defining a DNA must be done with great precision.
+If you do that, update the H_APP_ID constants in your Rust and TypeScript code accordingly.
 
 ___
 
@@ -329,12 +312,6 @@ Install dependencies by running:
 
 `npm install`
 
-Open the file `app.ts` and replace the DNA and agent pub key:
-```typescript
-const DNA_HASH = 'uhC0kHvFAj_TiqlX2aS6ZyMQLYshDozOl2y-QgOw2GVVSiyDYIWwr';
-const AGENT_PUB_KEY = 'uhCAkYV71BjFj7gNeOkJ96QXTPRChoEnREcJIC5WR4YbONLl_4y1U';
-```
-
 To run the zome calls to the App API, type:
 ```bash
 npm run app
@@ -342,8 +319,6 @@ npm run app
 
 The output will be something along these lines:
 ```bash
-connected to happ
-
 Result of the call: { other_number: 20 }
 ```
 
@@ -354,7 +329,7 @@ You made your first "Zome call", which is shorthand for an API call to your hApp
 There's a second command in the `package.json` file, with which you can make a call to the Admin API of the conductor. It will return a list of hashes
 of the available DNAs.
 
-The Admin port is different each time you generate the holochain sandbox. Therefore you need to copy it first from your hApp
+The Admin port is different each time you generate the holochain sandbox. Therefore you need to copy it first from your hApp.
 ```bash
 ...
 
