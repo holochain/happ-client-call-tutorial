@@ -4,7 +4,7 @@
 
 > holochain-client-rust revision: [59fc988b50f0097056aa02f11cd1b89a73f1c306  Jan 14, 2022](https://github.com/holochain/holochain-client-rust/commit/59fc988b50f0097056aa02f11cd1b89a73f1c306)
 
-> holochain-client-js version: [0.3.0 Jan 13, 2022](https://www.npmjs.com/package/@holochain/client/v/0.3.0)
+> holochain-client-js version: [0.3.1 Jan 13, 2022](https://www.npmjs.com/package/@holochain/client/v/0.3.1)
 
 > This project is set up as a complementary guide to the ["happ build tutorial"](https://github.com/holochain/happ-build-tutorial/commit/d3f16fe3664b61adc5322a2c48b033743bd87cf8), and interacts with that code via a clean separation at the "network layer". This project calls that project over a network connection, such as Websockets or HTTP, and has no direct dependency on the code itself other than communicating via that connection.
 
