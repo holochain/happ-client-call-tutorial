@@ -10,7 +10,7 @@
   "author": "Jost Schulte",
   "license": "ISC",
   "dependencies": {
-    "@holochain/conductor-api": "0.1.1"
+    "@holochain/client": "0.3.1"
   },
   "devDependencies": {
     "@typescript-eslint/eslint-plugin": "^4.28.5",

@@ -4,7 +4,7 @@ use hdk::prelude::{
     ExternIO, SerializedBytes,
 };
 use holochain_conductor_api::ZomeCall;
-use holochain_conductor_api_rust::AppWebsocket;
+use holochain_conductor_client::AppWebsocket;
 use serde::*;
 
 const WS_URL: &str = "ws://localhost:8888";
@@ -52,7 +52,7 @@ pub async fn call() -> Result<ZomeOutput, String> {
         zome_name: ZomeName::from(String::from(ZOME_NAME)),
         fn_name: FunctionName::from(String::from(FN_NAME)),
         payload: encoded_payload,
-        cap: None,
+        cap_secret: None,
         provenance: cell_id.clone().agent_pubkey().to_owned(),
     };
 

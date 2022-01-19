@@ -1,4 +1,7 @@
-import { AppWebsocket, CallZomeRequest } from '@holochain/conductor-api';
+import {
+  AppWebsocket,
+  CallZomeRequest,
+} from '@holochain/client';
 
 const WS_URL = 'ws://localhost:8888';
 const H_APP_ID = 'test-app';
@@ -29,7 +32,7 @@ AppWebsocket.connect(WS_URL).then(
     // define the context of the request
     const apiRequest: CallZomeRequest =
     {
-      cap: null,
+      cap_secret: null,
       cell_id,
       zome_name: ZOME_NAME,
       fn_name: FN_NAME,

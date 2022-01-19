@@ -1,4 +1,4 @@
-import { AdminWebsocket } from '@holochain/conductor-api';
+import { AdminWebsocket } from '@holochain/client';
 import { Buffer } from 'buffer';
 
 // port of the Holochain's Admin API

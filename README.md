@@ -1,12 +1,12 @@
 # How to call your hApp
 
-> Holochain revision: [753ea0873cd6e4c7b3ba30ead2d815d5f61b5373 Jun 4, 2021](https://github.com/holochain/holochain/commits/753ea0873cd6e4c7b3ba30ead2d815d5f61b5373)
+> Holochain revision: [v0.0.119 Dec 8, 2021](https://github.com/holochain/holochain/tree/holochain-0.0.119)
 
-> Rust Conductor Api revision: [4edf406b674d676f076bb19fdbe79fe5a1077c0d  June 9, 2021](https://github.com/holochain/conductor-client-rust/commit/4edf406b674d676f076bb19fdbe79fe5a1077c0d)
+> holochain-client-rust revision: [59fc988b50f0097056aa02f11cd1b89a73f1c306  Jan 14, 2022](https://github.com/holochain/holochain-client-rust/commit/59fc988b50f0097056aa02f11cd1b89a73f1c306)
 
-> TS/JS Conductor API version: [0.1.1 (July 12, 2021)](https://www.npmjs.com/package/@holochain/conductor-api/v/0.1.1)
+> holochain-client-js version: [0.3.0 Jan 13, 2022](https://www.npmjs.com/package/@holochain/client/v/0.3.0)
 
-> This project is set up as a complementary guide to the ["happ build tutorial"](https://github.com/holochain/happ-build-tutorial/tree/happ-client-call-tutorial), and interacts with that code via a clean separation at the "network layer". This project calls that project over a network connection, such as Websockets or HTTP, and has no direct dependency on the code itself other than communicating via that connection.
+> This project is set up as a complementary guide to the ["happ build tutorial"](https://github.com/holochain/happ-build-tutorial/commit/d3f16fe3664b61adc5322a2c48b033743bd87cf8), and interacts with that code via a clean separation at the "network layer". This project calls that project over a network connection, such as Websockets or HTTP, and has no direct dependency on the code itself other than communicating via that connection.
 
 Welcome to this project here to help you make your first network request or "call" to your hApp! If you haven't previously read the article on ["Application Architecture" on the developer documentation](https://developer.holochain.org/concepts/2_application_architecture/) it could be helpful to do so now, or at any point during this tutorial.
 
@@ -29,7 +29,7 @@ use hdk::prelude::{
     ExternIO, SerializedBytes,
 };
 use holochain_conductor_api::ZomeCall;
-use holochain_conductor_api_rust::AppWebsocket;
+use holochain_conductor_client::AppWebsocket;
 use serde::*;
 
 const WS_URL: &str = "ws://localhost:8888";
@@ -37,13 +37,13 @@ const H_APP_ID: &str = "test-app";
 const ZOME_NAME: &str = "numbers";
 const FN_NAME: &str = "add_ten";
 
-// custom data we want to pass the hApp
+// data we want to pass holochain
 #[derive(Serialize, Deserialize, SerializedBytes, Debug, Clone)]
 struct ZomeInput {
     number: i32,
 }
 
-// custom data we want back from the hApp
+// data we want back from holochain
 #[derive(Serialize, Deserialize, SerializedBytes, Debug, Clone)]
 pub struct ZomeOutput {
     other_number: i32,
@@ -77,7 +77,7 @@ pub async fn call() -> Result<ZomeOutput, String> {
         zome_name: ZomeName::from(String::from(ZOME_NAME)),
         fn_name: FunctionName::from(String::from(FN_NAME)),
         payload: encoded_payload,
-        cap: None,
+        cap_secret: None,
         provenance: cell_id.clone().agent_pubkey().to_owned(),
     };
 
@@ -115,13 +115,15 @@ This code is runnable and lives within [ts/src/app.ts](./ts/src/app.ts).
 Note that a difference between this and the Rust code is that the `callZome` function deserializes the output for you, whereas in Rust you have to serialize it yourself before sending it, and deserialize the output from the call as well.
 
 ```typescript
-import { AppWebsocket, CallZomeRequest } from '@holochain/conductor-api';
+import {
+  AppWebsocket,
+  CallZomeRequest,
+} from '@holochain/client';
 
 const WS_URL = 'ws://localhost:8888';
 const H_APP_ID = 'test-app';
 const ZOME_NAME = 'numbers';
 const FN_NAME = 'add_ten';
-
 
 // custom data we want to pass the hApp
 interface ZomeInput {
@@ -146,7 +148,7 @@ AppWebsocket.connect(WS_URL).then(
     // define the context of the request
     const apiRequest: CallZomeRequest =
     {
-      cap: null,
+      cap_secret: null,
       cell_id,
       zome_name: ZOME_NAME,
       fn_name: FN_NAME,
