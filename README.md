@@ -1,3 +1,7 @@
+# Note: this tutorial has been deprecated.
+
+As of 9/2022 a better way to build your first app is to use the [scaffolding generator](https://www.npmjs.com/package/@holochain/create).
+
 # How to call your hApp
 
 > Holochain revision: [v0.0.119 Dec 8, 2021](https://github.com/holochain/holochain/tree/holochain-0.0.119)
